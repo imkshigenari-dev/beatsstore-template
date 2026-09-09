@@ -55,7 +55,7 @@ cp .env.example .env.local
 - `private/beats/` … 購入者にのみメール添付される本番ファイル
   (`lib/beats.js` の `files.lease` / `files.exclusive` で指定したファイル名と一致させる)
 
-⚠️ `private/beats/` の中身は**絶対にpublicに置かない・Gitにコミットしない**でください
+⚠️ `private/beats/` の中身は**絶対にpublicに置かない・Gitにコミットしないでください**
 (支払い前に誰でもダウンロードできてしまいます)。
 
 ### 5. 起動
@@ -77,3 +77,7 @@ http://localhost:3000 でトップページが表示されます。
   会計ソフト連携を検討してください。
 - **特商法表記**: 日本国内で物販・デジタルコンテンツ販売を行う場合、
   特定商取引法に基づく表記ページの設置が必要です。
+
+---
+
+Template deployment trigger.
