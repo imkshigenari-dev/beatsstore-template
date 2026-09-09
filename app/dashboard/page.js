@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listBeats } from "../../lib/beats";
 import DeleteBeatButton from "./delete-button";
 import VisibilityButton from "./visibility-button";
+import StripeConnectButton from "./stripe-connect-button";
 
 export default async function DashboardPage() {
   const beats = await listBeats(null, { includeHidden: true });
@@ -12,6 +13,7 @@ export default async function DashboardPage() {
         <div style={{ display: "flex", gap: 8 }}>
           <Link href="/dashboard/marketing" className="buy-button" style={{ display: "inline-block", padding: "10px 20px", width: "auto" }}>MARKETING</Link>
           <Link href="/dashboard/new" className="buy-button" style={{ display: "inline-block", padding: "10px 20px", width: "auto" }}>+ 新しいビートを投稿</Link>
+          <StripeConnectButton />
         </div>
       </div>
       {beats.length === 0 && <p style={{ fontFamily: "IBM Plex Mono", fontSize: 13 }}>まだビートが登録されていません。</p>}
