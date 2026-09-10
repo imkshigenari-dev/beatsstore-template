@@ -33,7 +33,7 @@ export default function AccountLoginPage() {
 
   return (
     <main className="owner-login">
-      <div className="owner-login__eyebrow">WINO® / CUSTOMER AREA</div>
+      <div className="owner-login__eyebrow">BEAT STORE / CUSTOMER AREA</div>
       <h1>MY<br /><span>ACCOUNT</span></h1>
       <p>購入履歴、ライセンス情報、購入したビートのダウンロードを確認できます。</p>
       <form onSubmit={submit}>
@@ -43,6 +43,7 @@ export default function AccountLoginPage() {
       </form>
       {error && <p className="owner-login__error">{error}</p>}
       <p style={{ marginTop: 22 }}>アカウントをお持ちでない方 → <Link href="/account/register">CREATE ACCOUNT</Link></p>
+      <p style={{ marginTop: 18, fontFamily: "IBM Plex Mono", fontSize: 10, opacity: .5 }}>ストアオーナーの管理画面はこちら → <Link href="/dashboard/login">PRODUCER LOGIN</Link></p>
     </main>
   );
 }
