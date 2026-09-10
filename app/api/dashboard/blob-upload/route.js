@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { handleUpload } from "@vercel/blob/client";
 import { isValidSessionToken, COOKIE_NAME } from "../../../../lib/auth";
-import { isCustomerSetupAuthorized } from "../../../../lib/customer-access";
+import { CUSTOMER_SESSION_COOKIE, isCustomerSetupAuthorized, isValidCustomerSessionToken } from "../../../../lib/customer-access";
 
 export const runtime = "nodejs";
 
 export async function POST(request) {
   const adminToken = request.cookies.get(COOKIE_NAME)?.value;
   const adminOk = await isValidSessionToken(adminToken);
-  const customerOk = await isCustomerSetupAuthorized();
-  if (!adminOk && !customerOk) return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+  const customerToken = request.cookies.get(CUSTOMER_SESSION_COOKIE)?.value;
+  const customerOk = await isValidCustomerSessionToken(customerToken);
+  const setupOk = await isCustomerSetupAuthorized();
+  if (!adminOk && !customerOk && !setupOk) return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
 
   try {
     const body = await request.json();
