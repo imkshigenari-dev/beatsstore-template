@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "../../../../lib/stripe";
-import { isCustomerSetupAuthorized } from "../../../../lib/customer-access";
+import { CUSTOMER_SESSION_COOKIE, isCustomerSetupAuthorized, isValidCustomerSessionToken } from "../../../../lib/customer-access";
 import { getConnectedAccountId, saveConnectedAccountId } from "../../../../lib/stripe-connect";
+
+async function hasCustomerAccess(request) {
+  if (await isCustomerSetupAuthorized()) return true;
+  return isValidCustomerSessionToken(request.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
+}
 
 export async function POST(request) {
   try {
-    if (!(await isCustomerSetupAuthorized())) {
-      return NextResponse.json({ error: "Customer setup authorization is required." }, { status: 401 });
-    }
+    if (!(await hasCustomerAccess(request))) return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
 
     const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;
     if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
