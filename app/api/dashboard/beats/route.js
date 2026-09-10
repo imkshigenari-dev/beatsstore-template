@@ -13,17 +13,6 @@ function svgThumbnail({ title, bpm, key, genre, coverColor }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200"><defs><radialGradient id="g"><stop offset="0" stop-color="${safe(coverColor)}" stop-opacity=".95"/><stop offset=".55" stop-color="#3f4850" stop-opacity=".18"/><stop offset="1" stop-color="#050505"/></radialGradient><filter id="b"><feGaussianBlur stdDeviation="30"/></filter></defs><rect width="1200" height="1200" fill="#050505"/><circle cx="350" cy="320" r="360" fill="${safe(coverColor)}" opacity=".34" filter="url(#b)"/><circle cx="920" cy="930" r="300" fill="#a47f92" opacity=".18" filter="url(#b)"/><rect width="1200" height="1200" fill="url(#g)"/><text x="72" y="96" fill="#777" font-family="Arial" font-size="22" letter-spacing="7">WINO / BEAT STORE</text><text x="72" y="1000" fill="#d5d0c5" font-family="Arial" font-size="88" font-weight="800">${safe(title)}</text><text x="74" y="1060" fill="#777" font-family="Arial" font-size="22" letter-spacing="4">${safe(genre).toUpperCase()}   ${safe(bpm)} BPM   ${safe(key).toUpperCase()}</text><text x="1090" y="1080" fill="#7f9990" font-family="Arial" font-size="18" text-anchor="end" letter-spacing="5">MORE BEATS</text></svg>`;
 }
 
-function isFile(value) {
-  return value && typeof value.size === "number" && value.size > 0;
-}
-
-function safeExt(file, fallback) {
-  const fromName = String(file?.name || "").split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (fromName) return fromName;
-  const fromType = String(file?.type || "").split("/").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return fromType || fallback;
-}
-
 async function requireAdmin(req) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
   return isValidSessionToken(token);
@@ -34,13 +23,20 @@ export async function POST(req) {
   try {
     if (!(await requireAdmin(req))) return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
     const data = await req.json();
-    const { id, title, bpm, key, genre, coverColor, coverMode, thumbnailUrl, previewUrl, files = {}, visibility, notifySubscribers } = data;
+    const { id, title, bpm, key, genre, prices, coverColor, coverMode, thumbnailUrl, previewUrl, files = {}, visibility, notifySubscribers } = data;
 
     if (!title || !Number.isFinite(Number(bpm)) || Number(bpm) < 40 || Number(bpm) > 240 || !key || !previewUrl) {
       return NextResponse.json({ error: "タイトル・BPM・Key・試聴用ファイルを確認してください" }, { status: 400 });
     }
     if (!["public", "early_access", "draft"].includes(visibility)) return NextResponse.json({ error: "公開設定が不正です" }, { status: 400 });
     if (!["auto", "upload"].includes(coverMode)) return NextResponse.json({ error: "サムネイル設定が不正です" }, { status: 400 });
+
+    const normalizedPrices = {};
+    for (const planId of ["rental", "premium", "exclusive"]) {
+      const value = Number(prices?.[planId]);
+      if (!Number.isInteger(value) || value < 0) return NextResponse.json({ error: "価格は0円以上の整数で設定してください" }, { status: 400 });
+      normalizedPrices[planId] = value;
+    }
 
     const finalId = String(id || nanoid(12));
     let finalThumbnailUrl = thumbnailUrl || null;
@@ -66,6 +62,7 @@ export async function POST(req) {
       thumbnailUrl: finalThumbnailUrl,
       previewFile: previewUrl,
       files: Object.fromEntries(Object.entries(files).filter(([, url]) => Boolean(url))),
+      prices: normalizedPrices,
       visibility,
       createdAt: new Date().toISOString(),
     };
