@@ -11,9 +11,9 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ maxWidth: 860, margin: "0 auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, gap: 16, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24, gap: 16, flexWrap: "wrap" }}>
         <div>
-          <p style={{ fontFamily: "IBM Plex Mono", fontSize: 10, opacity: .55, margin: "0 0 6px" }}>STORE ADMIN</p>
+          <p style={{ fontFamily: "IBM Plex Mono", fontSize: 10, opacity: .55, margin: "0 0 6px" }}>PRODUCER / STORE DASHBOARD</p>
           <h1 style={{ margin: 0 }}>ダッシュボード</h1>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -21,6 +21,12 @@ export default async function DashboardPage() {
           <Link href="/dashboard/new" className="buy-button" style={{ display: "inline-block", padding: "10px 16px", width: "auto" }}>+ 新しいビート</Link>
         </div>
       </div>
+
+      <section style={{ marginBottom: 24, padding: "14px 16px", border: "1px solid #333", fontFamily: "IBM Plex Mono", fontSize: 10, lineHeight: 1.7 }}>
+        <div style={{ opacity: .5, letterSpacing: ".08em" }}>TEST PROGRAM</div>
+        <div style={{ marginTop: 2 }}>SETUP FEE ¥0 · PLATFORM FEE 0% · PUBLIC BEATS MAX 10</div>
+        <div style={{ marginTop: 3, opacity: .45 }}>テスト導入期間は販売機能・Stripe接続・ビート管理を確認するための無料運用です。</div>
+      </section>
 
       <StripeStatus />
 
