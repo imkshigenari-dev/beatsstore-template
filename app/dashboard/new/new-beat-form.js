@@ -4,11 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 
+const DEFAULT_PRICES = { rental: 5500, premium: 15000, exclusive: 33000 };
+
 export default function NewBeatForm({ genres }) {
   const [title, setTitle] = useState("");
   const [bpm, setBpm] = useState("");
   const [key, setKey] = useState("");
   const [genre, setGenre] = useState(genres[0] || "");
+  const [prices, setPrices] = useState(DEFAULT_PRICES);
   const [coverColor, setCoverColor] = useState("#789ca0");
   const [coverMode, setCoverMode] = useState("auto");
   const [coverFile, setCoverFile] = useState(null);
@@ -29,8 +32,6 @@ export default function NewBeatForm({ genres }) {
     const result = await upload(pathname, file, {
       access: "public",
       handleUploadUrl: "/api/dashboard/blob-upload",
-      // Vercel BlobのブラウザアップロードはPublic Blobで安定させる。
-      // 大きな音声はmultipartで分割アップロードする。
       contentType: file.type || undefined,
       onUploadProgress: (event) => {
         const percentage = Math.round(event?.percentage || 0);
@@ -41,6 +42,10 @@ export default function NewBeatForm({ genres }) {
     return result.url;
   }
 
+  function setPrice(id, value) {
+    setPrices((current) => ({ ...current, [id]: value }));
+  }
+
   async function handleSubmit() {
     if (!title.trim() || !bpm || !key.trim() || !previewFile) {
       setError("タイトル・BPM・Key・試聴用ファイルは必須です");
@@ -48,6 +53,10 @@ export default function NewBeatForm({ genres }) {
     }
     if (coverMode === "upload" && !coverFile) {
       setError("カスタムサムネイルを選択してください");
+      return;
+    }
+    if (Object.values(prices).some((price) => !Number.isInteger(Number(price)) || Number(price) < 0)) {
+      setError("価格は0円以上の整数で設定してください");
       return;
     }
 
@@ -64,9 +73,7 @@ export default function NewBeatForm({ genres }) {
       const rentalUrl = rentalFile ? await uploadFile(rentalFile, `deliverables/${id}/rental-${rentalFile.name}`, "レンタルMP3") : null;
       const premiumUrl = premiumFile ? await uploadFile(premiumFile, `deliverables/${id}/premium-${premiumFile.name}`, "プレミアムWAV") : null;
       const exclusiveUrl = exclusiveFile ? await uploadFile(exclusiveFile, `deliverables/${id}/exclusive-${exclusiveFile.name}`, "独占購入WAV") : null;
-      const thumbnailUrl = coverMode === "upload"
-        ? await uploadFile(coverFile, `thumbnails/${id}-cover`, "サムネイル")
-        : null;
+      const thumbnailUrl = coverMode === "upload" ? await uploadFile(coverFile, `thumbnails/${id}-cover`, "サムネイル") : null;
 
       const payload = {
         id,
@@ -74,6 +81,7 @@ export default function NewBeatForm({ genres }) {
         bpm: Number(bpm),
         key: key.trim(),
         genre,
+        prices: Object.fromEntries(Object.entries(prices).map(([id, value]) => [id, Number(value)])),
         coverColor,
         coverMode,
         thumbnailUrl,
@@ -108,6 +116,19 @@ export default function NewBeatForm({ genres }) {
       <div className="field"><label>BPM</label><input type="number" min="40" max="240" value={bpm} onChange={(e) => setBpm(e.target.value)} /></div>
       <div className="field"><label>Key</label><input value={key} onChange={(e) => setKey(e.target.value)} placeholder="例: F# Minor" /></div>
       <div className="field"><label>ジャンル</label><select value={genre} onChange={(e) => setGenre(e.target.value)}>{genres.map((g) => <option key={g} value={g}>{g}</option>)}</select></div>
+
+      <div className="field">
+        <label>販売価格（税込）</label>
+        <div style={{ display: "grid", gap: 10 }}>
+          {[["rental", "レンタル"], ["premium", "プレミアムリース"], ["exclusive", "独占購入"]].map(([id, label]) => (
+            <div key={id} style={{ display: "grid", gridTemplateColumns: "1fr 150px", gap: 10, alignItems: "center" }}>
+              <span style={{ fontFamily: "IBM Plex Mono", fontSize: 12 }}>{label}</span>
+              <input type="number" min="0" step="100" value={prices[id]} onChange={(e) => setPrice(id, e.target.value)} />
+            </div>
+          ))}
+        </div>
+        <p style={{ marginTop: 8, opacity: 0.6, fontSize: 11 }}>このビートだけの価格として保存されます。</p>
+      </div>
 
       <div className="field">
         <label>サムネイル</label>

@@ -1,59 +1,46 @@
-"use client";
+import Link from "next/link";
+import LoginForm from "./login-form";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
-export default function DashboardLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-
-  async function handleLogin(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/admin-login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "ログインに失敗しました");
-      }
-      router.replace("/dashboard");
-      router.refresh();
-    } catch (e) {
-      setError(e.message);
-      setLoading(false);
-    }
-  }
+export default async function DashboardLoginPage({ searchParams }) {
+  const params = await searchParams;
+  const setupMode = params?.setup === "1";
 
   return (
     <main className="owner-login">
-      <div className="owner-login__eyebrow">WINO® / PRIVATE AREA</div>
-      <h1>OWNER<br /><span>LOGIN</span></h1>
-      <p>WINO BEATS STORE 管理画面。オーナー専用です。</p>
+      <div className="owner-login__eyebrow">BEAT STORE / PRODUCER AREA</div>
+      <h1>{setupMode ? <>CREATE<br /><span>STORE</span></> : <>PRODUCER<br /><span>LOGIN</span></>}</h1>
+      <p>{setupMode ? "あなた専用のビート販売ストア管理アカウントを作成します。" : "ビート販売ストアの管理画面です。販売者専用です。"}</p>
 
-      <form onSubmit={handleLogin}>
-        <div className="field">
-          <label htmlFor="email">EMAIL</label>
-          <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div className="field">
-          <label htmlFor="password">PASSWORD</label>
-          <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        </div>
-        <button className="buy-button" type="submit" disabled={loading}>
-          {loading ? "AUTHENTICATING…" : "ENTER DASHBOARD"}
-        </button>
-      </form>
+      <div style={{ margin: "18px 0 24px", padding: "12px 14px", border: "1px solid #333", fontFamily: "IBM Plex Mono", fontSize: 10, lineHeight: 1.7, letterSpacing: ".04em" }}>
+        <div style={{ opacity: .55 }}>TEST PROGRAM</div>
+        <div style={{ marginTop: 2 }}>5 STORES · SETUP FEE ¥0 · PLATFORM FEE 0%</div>
+      </div>
 
-      {error && <p className="owner-login__error">{error}</p>}
-      <div className="owner-login__note"><span /> Restricted access · owner only</div>
+      <LoginForm setupMode={setupMode} />
+
+      {!setupMode && (
+        <div style={{ marginTop: 20 }}>
+          <Link href="/dashboard/login?setup=1" className="buy-button" style={{ display: "block", width: "100%", textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+            CREATE STORE ACCOUNT
+          </Link>
+          <p style={{ marginTop: 9, fontFamily: "IBM Plex Mono", fontSize: 9, opacity: .45, lineHeight: 1.6 }}>
+            テスト導入用の招待リンクからアカウントを作成できます。
+          </p>
+        </div>
+      )}
+
+      {setupMode && (
+        <p style={{ marginTop: 14, fontFamily: "IBM Plex Mono", fontSize: 9, opacity: .45, lineHeight: 1.6 }}>
+          テスト導入：招待リンクで認証された場合のみアカウントを作成できます。
+        </p>
+      )}
+
+      {!setupMode && (
+        <p style={{ marginTop: 20, fontFamily: "IBM Plex Mono", fontSize: 10, opacity: .55 }}>
+          購入者用アカウントはこちら → <Link href="/account/login">CUSTOMER LOGIN</Link>
+        </p>
+      )}
+      <div className="owner-login__note"><span /> Producer access · store owner only</div>
     </main>
   );
 }

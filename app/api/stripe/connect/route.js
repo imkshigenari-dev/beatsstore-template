@@ -1,20 +1,24 @@
 import { NextResponse } from "next/server";
-import { stripe } from "../../../../lib/stripe";
+import { getStripe } from "../../../../lib/stripe";
+import { CUSTOMER_SESSION_COOKIE, isCustomerSetupAuthorized, isValidCustomerSessionToken } from "../../../../lib/customer-access";
+import { getConnectedAccountId, saveConnectedAccountId } from "../../../../lib/stripe-connect";
+
+async function hasCustomerAccess(request) {
+  if (await isCustomerSetupAuthorized()) return true;
+  return isValidCustomerSessionToken(request.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
+}
 
 export async function POST(request) {
   try {
-    const body = await request.json().catch(() => ({}));
-    const existingAccountId = body.accountId || null;
+    if (!(await hasCustomerAccess(request))) return NextResponse.json({ error: "ログインが必要です" }, { status: 401 });
+
     const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;
+    if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
+    if (!origin) return NextResponse.json({ error: "Site URL is not configured." }, { status: 500 });
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
-    }
-    if (!origin) {
-      return NextResponse.json({ error: "Site URL is not configured." }, { status: 500 });
-    }
+    const stripe = getStripe();
+    let accountId = await getConnectedAccountId();
 
-    let accountId = existingAccountId;
     if (!accountId) {
       const account = await stripe.accounts.create({
         controller: {
@@ -24,16 +28,17 @@ export async function POST(request) {
         },
       });
       accountId = account.id;
+      await saveConnectedAccountId(accountId);
     }
 
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/dashboard?stripe=refresh&account_id=${encodeURIComponent(accountId)}`,
-      return_url: `${origin}/dashboard?stripe=return&account_id=${encodeURIComponent(accountId)}`,
+      refresh_url: `${origin}/dashboard?stripe=refresh`,
+      return_url: `${origin}/dashboard?stripe=return`,
       type: "account_onboarding",
     });
 
-    return NextResponse.json({ url: accountLink.url, accountId });
+    return NextResponse.json({ url: accountLink.url });
   } catch (error) {
     console.error("Stripe Connect onboarding error:", error);
     return NextResponse.json({ error: "Stripe連携の開始に失敗しました。" }, { status: 500 });
