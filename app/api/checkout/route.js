@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { stripe } from "../../../lib/stripe";
+import { getStripe } from "../../../lib/stripe";
 import { getBeat, PLANS, CUSTOM_ORDER_PRICE_JPY } from "../../../lib/beats";
+import { getConnectedAccountId } from "../../../lib/stripe-connect";
 import { CUSTOMER_COOKIE_NAME, getCustomerFromToken } from "../../../lib/customer-auth";
 
 export const runtime = "nodejs";
@@ -25,10 +26,7 @@ export async function POST(req) {
 
     const beat = await getBeat(beatId);
     const plan = PLANS[planId];
-
-    if (!beat || !plan) {
-      return NextResponse.json({ error: "ビートまたは購入プランが見つかりません" }, { status: 400 });
-    }
+    if (!beat || !plan) return NextResponse.json({ error: "ビートまたは購入プランが見つかりません" }, { status: 400 });
 
     if (beat.visibility !== "public" && beat.visibility !== "early_access") {
       return NextResponse.json({ error: "このビートは現在購入できません" }, { status: 400 });
@@ -41,13 +39,21 @@ export async function POST(req) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
     if (!siteUrl) throw new Error("NEXT_PUBLIC_SITE_URL is not configured");
 
+    const connectedAccountId = await getConnectedAccountId();
+    if (!connectedAccountId) {
+      return NextResponse.json({ error: "販売者のStripe設定が完了していません" }, { status: 503 });
+    }
+
     const custom = Boolean(isCustom);
-    const totalPrice = plan.priceJPY + (custom ? CUSTOM_ORDER_PRICE_JPY : 0);
+    const basePrice = Number(beat.prices?.[planId] ?? plan.priceJPY);
+    if (!Number.isInteger(basePrice) || basePrice < 0) throw new Error("Invalid beat price");
+    const totalPrice = basePrice + (custom ? CUSTOM_ORDER_PRICE_JPY : 0);
     const productName = custom ? `${beat.title} - ${plan.label} (カスタムオーダー)` : `${beat.title} - ${plan.label}`;
 
     const customerToken = cookies().get(CUSTOMER_COOKIE_NAME)?.value;
     const customer = await getCustomerFromToken(customerToken);
     const customerEmail = customer?.email || undefined;
+    const stripe = getStripe();
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -74,7 +80,7 @@ export async function POST(req) {
       customer_creation: "always",
       success_url: `${siteUrl}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/beat/${beat.id}`,
-    });
+    }, { stripeAccount: connectedAccountId });
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
