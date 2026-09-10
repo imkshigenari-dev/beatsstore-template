@@ -20,7 +20,7 @@ export default async function AccountPage() {
     <main className="account-page">
       <div className="dashboard-top">
         <div>
-          <p>WINO® / CUSTOMER AREA</p>
+          <p>BEAT STORE / CUSTOMER AREA</p>
           <h1>MY ACCOUNT</h1>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -61,7 +61,7 @@ export default async function AccountPage() {
                   <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <Link href={`/api/download/${order.id}`} className="admin-track__delete" style={{ textDecoration: "none", color: "#95a696" }}>DOWNLOAD {order.planId === "rental" ? "MP3" : "WAV"}</Link>
                     <Link href={`/beat/${order.beatId}`} className="admin-track__delete" style={{ textDecoration: "none" }}>VIEW BEAT</Link>
-                    <details style={{ marginTop: 12, width: "100%" }}><summary className="admin-track__delete" style={{ cursor: "pointer", display: "inline-block" }}>VIEW LICENSE / CONTRACT</summary><div style={{ marginTop: 10, padding: 14, border: "1px solid #333", lineHeight: 1.8, fontSize: 11 }}><p><strong>契約書番号:</strong> {order.id}</p><p><strong>契約日:</strong> {order.purchasedAt}</p><p><strong>楽曲タイトル:</strong> {order.beatTitle}</p><p><strong>ライセンス:</strong> {PLANS[order.planId]?.label || order.planId}</p><p><strong>購入者:</strong> {order.buyerName || "(未入力)"} / {order.buyerEmail}</p><p><strong>WINO連絡先:</strong> beatsbywino@gmail.com</p>{order.planId === "rental" && <p><strong>収益分配:</strong> WINO 30% / 購入者 70%</p>}<p style={{ whiteSpace: "pre-wrap", marginTop: 12 }}>{licenseBodyText(PLANS[order.planId])}</p><p style={{ marginTop: 12 }}>リリース時はスプリット契約が必要です。お問い合わせ: beatsbywino@gmail.com</p></div></details>
+                    <details style={{ marginTop: 12, width: "100%" }}><summary className="admin-track__delete" style={{ cursor: "pointer", display: "inline-block" }}>VIEW LICENSE / CONTRACT</summary><div style={{ marginTop: 10, padding: 14, border: "1px solid #333", lineHeight: 1.8, fontSize: 11 }}><p><strong>契約書番号:</strong> {order.id}</p><p><strong>契約日:</strong> {order.purchasedAt}</p><p><strong>楽曲タイトル:</strong> {order.beatTitle}</p><p><strong>ライセンス:</strong> {PLANS[order.planId]?.label || order.planId}</p><p><strong>購入者:</strong> {order.buyerName || "(未入力)"} / {order.buyerEmail}</p>{order.planId === "rental" && <p><strong>収益分配:</strong> 30% / 70%</p>}<p style={{ whiteSpace: "pre-wrap", marginTop: 12 }}>{licenseBodyText(PLANS[order.planId])}</p></div></details>
                   </div>
                 </div>
               </div>
