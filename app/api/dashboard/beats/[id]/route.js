@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { deleteBeat, getBeat, saveBeat } from "../../../../../lib/beats";
 import { isValidSessionToken, COOKIE_NAME } from "../../../../../lib/auth";
-import { isCustomerSetupAuthorized } from "../../../../../lib/customer-access";
+import { isCustomerSetupAuthorized, isValidCustomerSessionToken, CUSTOMER_SESSION_COOKIE } from "../../../../../lib/customer-access";
 
 async function requireDashboardAccess(req) {
   const adminToken = req.cookies.get(COOKIE_NAME)?.value;
   if (await isValidSessionToken(adminToken)) return true;
+  const customerToken = req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value;
+  if (await isValidCustomerSessionToken(customerToken)) return true;
   return isCustomerSetupAuthorized();
 }
 
