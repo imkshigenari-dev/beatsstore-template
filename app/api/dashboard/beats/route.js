@@ -3,7 +3,7 @@ import { put } from "@vercel/blob";
 import { nanoid } from "nanoid";
 import { saveBeat } from "../../../../lib/beats";
 import { isValidSessionToken, COOKIE_NAME } from "../../../../lib/auth";
-import { isCustomerSetupAuthorized } from "../../../../lib/customer-access";
+import { CUSTOMER_SESSION_COOKIE, isCustomerSetupAuthorized, isValidCustomerSessionToken } from "../../../../lib/customer-access";
 import { sendBeatAnnouncement } from "../../../../lib/marketing-email";
 
 export const runtime = "nodejs";
@@ -12,7 +12,8 @@ export const dynamic = "force-dynamic";
 async function requireDashboardAccess(req) {
   const token = req.cookies.get(COOKIE_NAME)?.value;
   if (await isValidSessionToken(token)) return true;
-  return isCustomerSetupAuthorized();
+  if (await isCustomerSetupAuthorized()) return true;
+  return isValidCustomerSessionToken(req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value);
 }
 
 function svgThumbnail({ title, bpm, key, genre, coverColor }) {
