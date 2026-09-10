@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe } from "../../../../lib/stripe";
+import { getStripe } from "../../../../lib/stripe";
 import { isCustomerSetupAuthorized } from "../../../../lib/customer-access";
 import { getConnectedAccountId, saveConnectedAccountId } from "../../../../lib/stripe-connect";
 
@@ -10,13 +10,10 @@ export async function POST(request) {
     }
 
     const origin = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL;
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
-    }
-    if (!origin) {
-      return NextResponse.json({ error: "Site URL is not configured." }, { status: 500 });
-    }
+    if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: "Stripe is not configured." }, { status: 503 });
+    if (!origin) return NextResponse.json({ error: "Site URL is not configured." }, { status: 500 });
 
+    const stripe = getStripe();
     let accountId = await getConnectedAccountId();
 
     if (!accountId) {
