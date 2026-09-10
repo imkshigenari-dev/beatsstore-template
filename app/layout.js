@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "TAPE DECK BEATS",
-  description: "Hip-Hop beats for lease or exclusive purchase.",
+  title: "BEAT STORE",
+  description: "Beat storefront and licensing platform.",
 };
 
 export default function RootLayout({ children }) {
