@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function DashboardLoginPage() {
+  const searchParams = useSearchParams();
+  const setupMode = searchParams.get("setup") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function handleLogin(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -18,12 +20,10 @@ export default function DashboardLoginPage() {
       const res = await fetch("/api/admin-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, mode: setupMode ? "register" : "login" }),
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "ログインに失敗しました");
-      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || (setupMode ? "登録に失敗しました" : "ログインに失敗しました"));
       router.replace("/dashboard");
       router.refresh();
     } catch (e) {
@@ -34,26 +34,26 @@ export default function DashboardLoginPage() {
 
   return (
     <main className="owner-login">
-      <div className="owner-login__eyebrow">WINO® / PRIVATE AREA</div>
-      <h1>OWNER<br /><span>LOGIN</span></h1>
-      <p>WINO BEATS STORE 管理画面。オーナー専用です。</p>
+      <div className="owner-login__eyebrow">BEAT STORE / PRIVATE AREA</div>
+      <h1>{setupMode ? <>CREATE<br /><span>ACCOUNT</span></> : <>STORE<br /><span>LOGIN</span></>}</h1>
+      <p>{setupMode ? "あなた専用の管理画面を作成します。" : "メールアドレスとパスワードでログインしてください。"}</p>
 
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="email">EMAIL</label>
-          <input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </div>
         <div className="field">
-          <label htmlFor="password">PASSWORD</label>
-          <input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label htmlFor="password">{setupMode ? "PASSWORD（10文字以上）" : "PASSWORD"}</label>
+          <input id="password" type="password" autoComplete={setupMode ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} minLength={10} required />
         </div>
         <button className="buy-button" type="submit" disabled={loading}>
-          {loading ? "AUTHENTICATING…" : "ENTER DASHBOARD"}
+          {loading ? "AUTHENTICATING…" : setupMode ? "CREATE ACCOUNT" : "ENTER DASHBOARD"}
         </button>
       </form>
 
       {error && <p className="owner-login__error">{error}</p>}
-      <div className="owner-login__note"><span /> Restricted access · owner only</div>
+      <div className="owner-login__note"><span /> Secure customer access</div>
     </main>
   );
 }
